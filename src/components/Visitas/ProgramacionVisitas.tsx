@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,11 +9,14 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CalendarIcon, Plus, Filter, RotateCcw, Clock, MapPin } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CalendarIcon, Plus, Filter, RotateCcw, Clock, MapPin, CalendarDays, Calendar as CalendarViewIcon } from 'lucide-react';
 import { Visita, Cliente, Equipo } from '@/types';
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import VistaMensual from './VistaMensual';
+import VistaDiaria from './VistaDiaria';
 
 const ProgramacionVisitas = () => {
   const [visitas, setVisitas] = useState<Visita[]>([]);
@@ -134,18 +136,104 @@ const ProgramacionVisitas = () => {
     setVisitas(mockVisitas);
   }, []);
 
-  const inicioSemana = startOfWeek(fechaSeleccionada, { weekStartsOn: 1 });
-  const diasSemana = Array.from({ length: 7 }, (_, i) => addDays(inicioSemana, i));
+  // Vista semanal
+  const VistaSemanal = () => {
+    const inicioSemana = startOfWeek(fechaSeleccionada, { weekStartsOn: 1 });
+    const diasSemana = Array.from({ length: 7 }, (_, i) => addDays(inicioSemana, i));
 
-  const visitasFiltradas = visitas.filter(visita => {
-    const fechaVisita = new Date(visita.fechaProgramada);
-    const enSemana = diasSemana.some(dia => isSameDay(fechaVisita, dia));
-    const filtroCliente = filtros.cliente === 'all' || visita.clienteId === filtros.cliente;
-    const filtroEquipo = filtros.equipo === 'all' || visita.equipoId === filtros.equipo;
-    const filtroEstado = filtros.estado === 'all' || visita.estado === filtros.estado;
-    
-    return enSemana && filtroCliente && filtroEquipo && filtroEstado;
-  });
+    const visitasFiltradas = visitas.filter(visita => {
+      const fechaVisita = new Date(visita.fechaProgramada);
+      const enSemana = diasSemana.some(dia => isSameDay(fechaVisita, dia));
+      const filtroCliente = filtros.cliente === 'all' || visita.clienteId === filtros.cliente;
+      const filtroEquipo = filtros.equipo === 'all' || visita.equipoId === filtros.equipo;
+      const filtroEstado = filtros.estado === 'all' || visita.estado === filtros.estado;
+      
+      return enSemana && filtroCliente && filtroEquipo && filtroEstado;
+    });
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            Semana del {format(inicioSemana, 'dd/MM')} al {format(addDays(inicioSemana, 6), 'dd/MM/yyyy')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Equipo</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Tareas</TableHead>
+                <TableHead>Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visitasFiltradas.map((visita) => (
+                <TableRow key={visita.id}>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{visita.clienteNombre}</div>
+                      <div className="text-sm text-gray-500 flex items-center">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {clientes.find(c => c.id === visita.clienteId)?.direccion}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>{visita.equipoNombre}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center">
+                      <Clock className="h-4 w-4 mr-1 text-gray-500" />
+                      {format(new Date(visita.fechaProgramada), 'dd/MM/yyyy')}
+                    </div>
+                  </TableCell>
+                  <TableCell>{getEstadoBadge(visita.estado)}</TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {visita.tareasProgramadas.length} tareas programadas
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      {visita.estado === 'programada' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const nuevaFecha = prompt('Nueva fecha (YYYY-MM-DD):');
+                            if (nuevaFecha) {
+                              reagendarVisita(visita.id, nuevaFecha);
+                            }
+                          }}
+                        >
+                          <RotateCcw className="h-4 w-4 mr-1" />
+                          Reagendar
+                        </Button>
+                      )}
+                      {visita.fechaEjecucion && (
+                        <div className="text-xs text-green-600">
+                          Ejecutada: {format(new Date(visita.fechaEjecucion), 'dd/MM HH:mm')}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {visitasFiltradas.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                    No hay visitas programadas para esta semana con los filtros aplicados
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const crearVisita = () => {
     if (!nuevaVisita.clienteId || !nuevaVisita.equipoId || !nuevaVisita.fechaProgramada) {
@@ -355,7 +443,7 @@ const ProgramacionVisitas = () => {
               </div>
 
               <div>
-                <Label>Semana</Label>
+                <Label>Fecha de Referencia</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-left font-normal">
@@ -379,87 +467,46 @@ const ProgramacionVisitas = () => {
         </Card>
       </div>
 
-      {/* Tabla semanal */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Semana del {format(inicioSemana, 'dd/MM')} al {format(addDays(inicioSemana, 6), 'dd/MM/yyyy')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Equipo</TableHead>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Tareas</TableHead>
-                <TableHead>Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {visitasFiltradas.map((visita) => (
-                <TableRow key={visita.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{visita.clienteNombre}</div>
-                      <div className="text-sm text-gray-500 flex items-center">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        {clientes.find(c => c.id === visita.clienteId)?.direccion}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{visita.equipoNombre}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <Clock className="h-4 w-4 mr-1 text-gray-500" />
-                      {format(new Date(visita.fechaProgramada), 'dd/MM/yyyy')}
-                    </div>
-                  </TableCell>
-                  <TableCell>{getEstadoBadge(visita.estado)}</TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {visita.tareasProgramadas.length} tareas programadas
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      {visita.estado === 'programada' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const nuevaFecha = prompt('Nueva fecha (YYYY-MM-DD):');
-                            if (nuevaFecha) {
-                              reagendarVisita(visita.id, nuevaFecha);
-                            }
-                          }}
-                        >
-                          <RotateCcw className="h-4 w-4 mr-1" />
-                          Reagendar
-                        </Button>
-                      )}
-                      {visita.fechaEjecucion && (
-                        <div className="text-xs text-green-600">
-                          Ejecutada: {format(new Date(visita.fechaEjecucion), 'dd/MM HH:mm')}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {visitasFiltradas.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                    No hay visitas programadas para esta semana con los filtros aplicados
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* Tabs para diferentes vistas */}
+      <Tabs defaultValue="semanal" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="diaria" className="flex items-center">
+            <Clock className="h-4 w-4 mr-2" />
+            Vista Diaria
+          </TabsTrigger>
+          <TabsTrigger value="semanal" className="flex items-center">
+            <CalendarDays className="h-4 w-4 mr-2" />
+            Vista Semanal
+          </TabsTrigger>
+          <TabsTrigger value="mensual" className="flex items-center">
+            <CalendarViewIcon className="h-4 w-4 mr-2" />
+            Vista Mensual
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="diaria" className="mt-6">
+          <VistaDiaria 
+            visitas={visitas}
+            fechaSeleccionada={fechaSeleccionada}
+            setFechaSeleccionada={setFechaSeleccionada}
+            clientes={clientes}
+            equipos={equipos}
+          />
+        </TabsContent>
+        
+        <TabsContent value="semanal" className="mt-6">
+          <VistaSemanal />
+        </TabsContent>
+        
+        <TabsContent value="mensual" className="mt-6">
+          <VistaMensual 
+            visitas={visitas}
+            fechaSeleccionada={fechaSeleccionada}
+            setFechaSeleccionada={setFechaSeleccionada}
+            clientes={clientes}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
