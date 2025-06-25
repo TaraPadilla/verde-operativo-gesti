@@ -1,168 +1,207 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { MapPin, Clock, CheckSquare, MessageSquare, Navigation } from 'lucide-react';
-import { Visita } from '@/types';
-import { toast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar as CalendarIcon, MapPin, Clock, Users, CheckCircle } from 'lucide-react';
+import { Visita, Cliente, Equipo } from '@/types';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const HojaRuta = () => {
-  const [visitasHoy] = useState<Visita[]>([
-    {
-      id: '1',
-      clienteId: '1',
-      clienteNombre: 'Jardines del Norte S.A.',
-      equipoId: '1',
-      equipoNombre: 'Equipo A',
-      fechaProgramada: '2024-06-25',
-      estado: 'programada',
-      tareasProgramadas: ['Corte de césped', 'Poda de arbustos', 'Riego general'],
-      tareasRealizadas: [],
-      tareasAdicionales: [],
-      observaciones: ''
-    },
-    {
-      id: '2',
-      clienteId: '2',
-      clienteNombre: 'Villa Hermosa',
-      equipoId: '1',
-      equipoNombre: 'Equipo A',
-      fechaProgramada: '2024-06-25',
-      estado: 'programada',
-      tareasProgramadas: ['Mantenimiento de jardín', 'Limpieza de área verde'],
-      tareasRealizadas: [],
-      tareasAdicionales: [],
-      observaciones: ''
-    }
-  ]);
+  const [visitasHoy, setVisitasHoy] = useState<Visita[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [equipos, setEquipos] = useState<Equipo[]>([]);
 
-  const [visitasActualizadas, setVisitasActualizadas] = useState<{[key: string]: any}>({});
-
-  const handleTareaChange = (visitaId: string, tarea: string, checked: boolean) => {
-    setVisitasActualizadas(prev => ({
-      ...prev,
-      [visitaId]: {
-        ...prev[visitaId],
-        tareasRealizadas: checked 
-          ? [...(prev[visitaId]?.tareasRealizadas || []), tarea]
-          : (prev[visitaId]?.tareasRealizadas || []).filter((t: string) => t !== tarea)
+  // Mock data
+  useEffect(() => {
+    const mockClientes: Cliente[] = [
+      {
+        id: '1',
+        nombre: 'Jardín Villa Rosa',
+        direccion: 'Av. Principal 123',
+        telefono: '555-0101',
+        email: 'villa.rosa@email.com',
+        grupo: 'A',
+        plan: 'semanal',
+        diaAsignado: 'Lunes',
+        fechaRegistro: '2024-01-15',
+        activo: true,
+        observaciones: '',
+        historial: []
+      },
+      {
+        id: '2',
+        nombre: 'Condominio Los Pinos',
+        direccion: 'Calle 45 #78-90',
+        telefono: '555-0102',
+        email: 'lospinos@email.com',
+        grupo: 'B',
+        plan: 'quincenal',
+        diaAsignado: 'Miércoles',
+        fechaRegistro: '2024-01-20',
+        activo: true,
+        observaciones: '',
+        historial: []
       }
-    }));
-  };
+    ];
 
-  const handleObservacionChange = (visitaId: string, observacion: string) => {
-    setVisitasActualizadas(prev => ({
-      ...prev,
-      [visitaId]: {
-        ...prev[visitaId],
-        observaciones: observacion
+    const mockEquipos: Equipo[] = [
+      {
+        id: '1',
+        nombre: 'Equipo Alpha',
+        encargadoId: '3',
+        encargadoNombre: 'Carlos Hernández',
+        activo: true,
+        miembros: ['Carlos Hernández', 'José Martínez']
       }
-    }));
-  };
+    ];
+
+    const mockVisitas: Visita[] = [
+      {
+        id: '1',
+        clienteId: '1',
+        clienteNombre: 'Jardín Villa Rosa',
+        equipoId: '1',
+        equipoNombre: 'Equipo Alpha',
+        fechaProgramada: format(new Date(), 'yyyy-MM-dd'),
+        estado: 'programada',
+        tareasProgramadas: ['Poda de césped', 'Riego de plantas', 'Limpieza general'],
+        tareasRealizadas: [],
+        tareasAdicionales: [],
+        observaciones: ''
+      },
+      {
+        id: '2',
+        clienteId: '2',
+        clienteNombre: 'Condominio Los Pinos',
+        equipoId: '1',
+        equipoNombre: 'Equipo Alpha',
+        fechaProgramada: format(new Date(), 'yyyy-MM-dd'),
+        estado: 'en_proceso',
+        tareasProgramadas: ['Mantenimiento de jardines', 'Poda de arbustos'],
+        tareasRealizadas: ['Mantenimiento de jardines'],
+        tareasAdicionales: [],
+        observaciones: 'Cliente solicita atención especial a las rosas'
+      }
+    ];
+
+    setClientes(mockClientes);
+    setEquipos(mockEquipos);
+    setVisitasHoy(mockVisitas);
+  }, []);
 
   const marcarVisitaCompleta = (visitaId: string) => {
-    const visita = visitasHoy.find(v => v.id === visitaId);
-    const actualizacion = visitasActualizadas[visitaId];
-    
-    if (!actualizacion?.tareasRealizadas?.length) {
-      toast({
-        title: "Selecciona las tareas",
-        description: "Debes marcar al menos una tarea como realizada",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Visita completada",
-      description: `Visita a ${visita?.clienteNombre} marcada como completa`,
-    });
-
-    // Aquí se enviarían los datos al backend
-    console.log('Datos de visita completada:', {
-      visitaId,
-      tareasRealizadas: actualizacion.tareasRealizadas,
-      observaciones: actualizacion.observaciones,
-      fechaEjecucion: new Date().toISOString()
-    });
+    setVisitasHoy(prev => prev.map(visita => 
+      visita.id === visitaId 
+        ? { ...visita, estado: 'completada', fechaEjecucion: new Date().toISOString() }
+        : visita
+    ));
   };
 
-  const getEstadoColor = (estado: string) => {
+  const actualizarTareasRealizadas = (visitaId: string, tareas: string[]) => {
+    setVisitasHoy(prev => prev.map(visita => 
+      visita.id === visitaId 
+        ? { ...visita, tareasRealizadas: tareas }
+        : visita
+    ));
+  };
+
+  const actualizarObservaciones = (visitaId: string, observaciones: string) => {
+    setVisitasHoy(prev => prev.map(visita => 
+      visita.id === visitaId 
+        ? { ...visita, observaciones }
+        : visita
+    ));
+  };
+
+  const getEstadoBadge = (estado: string) => {
     switch (estado) {
-      case 'completada': return 'bg-green-100 text-green-800';
-      case 'en_proceso': return 'bg-blue-100 text-blue-800';
-      case 'programada': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'programada':
+        return <Badge variant="outline">Programada</Badge>;
+      case 'en_proceso':
+        return <Badge className="bg-yellow-500">En Proceso</Badge>;
+      case 'completada':
+        return <Badge className="bg-green-500">Completada</Badge>;
+      default:
+        return <Badge variant="outline">{estado}</Badge>;
     }
   };
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Mi Hoja de Ruta</h1>
-        <p className="text-gray-600 flex items-center">
-          <Calendar className="mr-2 h-4 w-4" />
-          {new Date().toLocaleDateString('es-ES', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Hoja de Ruta</h1>
+        <p className="text-gray-600">
+          Visitas programadas para hoy - {format(new Date(), 'dd/MM/yyyy', { locale: es })}
         </p>
       </div>
 
       <div className="grid gap-6">
-        {visitasHoy.map((visita, index) => {
-          const actualizacion = visitasActualizadas[visita.id] || {};
-          const tareasRealizadas = actualizacion.tareasRealizadas || [];
-          const todasTareasCompletas = tareasRealizadas.length === visita.tareasProgramadas.length;
-
-          return (
-            <Card key={visita.id} className="border-l-4 border-l-green-500">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-xl flex items-center">
-                      <MapPin className="mr-2 h-5 w-5 text-green-600" />
-                      {visita.clienteNombre}
-                    </CardTitle>
-                    <CardDescription className="flex items-center mt-2">
-                      <Clock className="mr-2 h-4 w-4" />
-                      Visita #{index + 1} del día
-                    </CardDescription>
-                  </div>
-                  <Badge className={getEstadoColor(visita.estado)}>
-                    {visita.estado}
-                  </Badge>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-6">
-                {/* Tareas */}
+        {visitasHoy.map((visita) => (
+          <Card key={visita.id} className="overflow-hidden">
+            <CardHeader className="bg-green-50 border-b">
+              <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-                    <CheckSquare className="mr-2 h-4 w-4" />
-                    Tareas Programadas
-                  </h3>
-                  <div className="space-y-3">
-                    {visita.tareasProgramadas.map((tarea, tareaIndex) => (
-                      <div key={tareaIndex} className="flex items-center space-x-3">
+                  <CardTitle className="text-lg font-semibold text-gray-900">
+                    {visita.clienteNombre}
+                  </CardTitle>
+                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      {visita.equipoNombre}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      {format(new Date(visita.fechaProgramada), 'HH:mm')}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  {getEstadoBadge(visita.estado)}
+                  {visita.estado !== 'completada' && (
+                    <Button
+                      onClick={() => marcarVisitaCompleta(visita.id)}
+                      className="bg-green-600 hover:bg-green-700"
+                      size="sm"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Completar
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3">Tareas Programadas</h4>
+                  <div className="space-y-2">
+                    {visita.tareasProgramadas.map((tarea, index) => (
+                      <div key={index} className="flex items-center space-x-2">
                         <Checkbox
-                          id={`tarea-${visita.id}-${tareaIndex}`}
-                          checked={tareasRealizadas.includes(tarea)}
-                          onCheckedChange={(checked) => 
-                            handleTareaChange(visita.id, tarea, checked as boolean)
-                          }
+                          id={`tarea-${visita.id}-${index}`}
+                          checked={visita.tareasRealizadas.includes(tarea)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              actualizarTareasRealizadas(visita.id, [...visita.tareasRealizadas, tarea]);
+                            } else {
+                              actualizarTareasRealizadas(
+                                visita.id, 
+                                visita.tareasRealizadas.filter(t => t !== tarea)
+                              );
+                            }
+                          }}
                         />
-                        <label 
-                          htmlFor={`tarea-${visita.id}-${tareaIndex}`}
+                        <label
+                          htmlFor={`tarea-${visita.id}-${index}`}
                           className={`text-sm ${
-                            tareasRealizadas.includes(tarea) 
+                            visita.tareasRealizadas.includes(tarea) 
                               ? 'line-through text-gray-500' 
-                              : 'text-gray-900'
+                              : 'text-gray-700'
                           }`}
                         >
                           {tarea}
@@ -170,71 +209,44 @@ const HojaRuta = () => {
                       </div>
                     ))}
                   </div>
-                  
-                  <div className="mt-4 text-sm text-gray-600">
-                    Completadas: {tareasRealizadas.length} de {visita.tareasProgramadas.length}
-                  </div>
                 </div>
 
-                {/* Observaciones */}
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Observaciones de Campo
-                  </h3>
+                  <h4 className="font-semibold text-gray-900 mb-3">Observaciones</h4>
                   <Textarea
-                    placeholder="Notas sobre la visita, condiciones del jardín, problemas encontrados..."
-                    value={actualizacion.observaciones || ''}
-                    onChange={(e) => handleObservacionChange(visita.id, e.target.value)}
+                    placeholder="Notas sobre la visita..."
+                    value={visita.observaciones}
+                    onChange={(e) => actualizarObservaciones(visita.id, e.target.value)}
                     className="min-h-[100px]"
                   />
                 </div>
+              </div>
 
-                {/* Acciones */}
-                <div className="flex gap-3 pt-4 border-t">
-                  <Button 
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    onClick={() => marcarVisitaCompleta(visita.id)}
-                    disabled={tareasRealizadas.length === 0}
-                  >
-                    <CheckSquare className="mr-2 h-4 w-4" />
-                    {todasTareasCompletas ? 'Completar Visita' : 'Completar Parcialmente'}
-                  </Button>
-                  
-                  <Button variant="outline" className="flex-1">
-                    <Navigation className="mr-2 h-4 w-4" />
-                    Ver Ubicación
-                  </Button>
+              {visita.fechaEjecucion && (
+                <div className="mt-4 p-3 bg-green-50 rounded-md">
+                  <p className="text-sm text-green-800">
+                    <strong>Completada:</strong> {format(new Date(visita.fechaEjecucion), 'dd/MM/yyyy HH:mm', { locale: es })}
+                  </p>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
 
-                {/* Progreso visual */}
-                <div className="bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${(tareasRealizadas.length / visita.tareasProgramadas.length) * 100}%` 
-                    }}
-                  ></div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {visitasHoy.length === 0 && (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No hay visitas programadas
+              </h3>
+              <p className="text-gray-600">
+                No tienes visitas asignadas para el día de hoy.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
-
-      {visitasHoy.length === 0 && (
-        <Card className="text-center py-12">
-          <CardContent>
-            <MapPin className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No hay visitas programadas para hoy
-            </h3>
-            <p className="text-gray-600">
-              Disfruta de tu día libre o consulta la programación de mañana
-            </p>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };

@@ -7,6 +7,7 @@ import Sidebar from '@/components/Layout/Sidebar';
 import Dashboard from '@/components/Dashboard/Dashboard';
 import GestionClientes from '@/components/Clientes/GestionClientes';
 import HojaRuta from '@/components/HojaRuta/HojaRuta';
+import ProgramacionVisitas from '@/components/Visitas/ProgramacionVisitas';
 
 const Index = () => {
   const { usuario, isLoading } = useAuth();
@@ -37,6 +38,8 @@ const Index = () => {
         return <HojaRuta />;
       case 'visitas-hoy':
         return <HojaRuta />;
+      case 'visitas':
+        return <ProgramacionVisitas />;
       case 'prospectos':
         return (
           <div className="p-6">
@@ -56,13 +59,6 @@ const Index = () => {
           <div className="p-6">
             <h1 className="text-3xl font-bold text-gray-900 mb-4">Gestión de Tareas</h1>
             <p className="text-gray-600">Módulo de tareas en desarrollo...</p>
-          </div>
-        );
-      case 'visitas':
-        return (
-          <div className="p-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Programación de Visitas</h1>
-            <p className="text-gray-600">Módulo de programación en desarrollo...</p>
           </div>
         );
       case 'usuarios':
