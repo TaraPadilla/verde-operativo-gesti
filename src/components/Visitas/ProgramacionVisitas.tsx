@@ -22,9 +22,9 @@ const ProgramacionVisitas = () => {
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date>(new Date());
   const [filtros, setFiltros] = useState({
-    cliente: '',
-    equipo: '',
-    estado: ''
+    cliente: 'all',
+    equipo: 'all',
+    estado: 'all'
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [nuevaVisita, setNuevaVisita] = useState({
@@ -140,9 +140,9 @@ const ProgramacionVisitas = () => {
   const visitasFiltradas = visitas.filter(visita => {
     const fechaVisita = new Date(visita.fechaProgramada);
     const enSemana = diasSemana.some(dia => isSameDay(fechaVisita, dia));
-    const filtroCliente = !filtros.cliente || visita.clienteId === filtros.cliente;
-    const filtroEquipo = !filtros.equipo || visita.equipoId === filtros.equipo;
-    const filtroEstado = !filtros.estado || visita.estado === filtros.estado;
+    const filtroCliente = filtros.cliente === 'all' || visita.clienteId === filtros.cliente;
+    const filtroEquipo = filtros.equipo === 'all' || visita.equipoId === filtros.equipo;
+    const filtroEstado = filtros.estado === 'all' || visita.estado === filtros.estado;
     
     return enSemana && filtroCliente && filtroEquipo && filtroEstado;
   });
@@ -306,7 +306,7 @@ const ProgramacionVisitas = () => {
                     <SelectValue placeholder="Todos los clientes" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los clientes</SelectItem>
+                    <SelectItem value="all">Todos los clientes</SelectItem>
                     {clientes.map(cliente => (
                       <SelectItem key={cliente.id} value={cliente.id}>
                         {cliente.nombre}
@@ -325,7 +325,7 @@ const ProgramacionVisitas = () => {
                     <SelectValue placeholder="Todos los equipos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los equipos</SelectItem>
+                    <SelectItem value="all">Todos los equipos</SelectItem>
                     {equipos.map(equipo => (
                       <SelectItem key={equipo.id} value={equipo.id}>
                         {equipo.nombre}
@@ -344,7 +344,7 @@ const ProgramacionVisitas = () => {
                     <SelectValue placeholder="Todos los estados" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los estados</SelectItem>
+                    <SelectItem value="all">Todos los estados</SelectItem>
                     <SelectItem value="programada">Programada</SelectItem>
                     <SelectItem value="en_proceso">En Proceso</SelectItem>
                     <SelectItem value="completada">Completada</SelectItem>
