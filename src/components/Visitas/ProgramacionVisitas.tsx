@@ -10,13 +10,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CalendarIcon, Plus, Filter, RotateCcw, Clock, MapPin, CalendarDays, Calendar as CalendarViewIcon } from 'lucide-react';
+import { CalendarIcon, Plus, Filter, RotateCcw, Clock, MapPin, CalendarDays, Calendar as CalendarViewIcon, Grid } from 'lucide-react';
 import { Visita, Cliente, Equipo } from '@/types';
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import VistaMensual from './VistaMensual';
 import VistaDiaria from './VistaDiaria';
+import CalendarioSemanal from './CalendarioSemanal';
 
 const ProgramacionVisitas = () => {
   const [visitas, setVisitas] = useState<Visita[]>([]);
@@ -468,8 +469,12 @@ const ProgramacionVisitas = () => {
       </div>
 
       {/* Tabs para diferentes vistas */}
-      <Tabs defaultValue="semanal" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="calendario" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="calendario" className="flex items-center">
+            <Grid className="h-4 w-4 mr-2" />
+            Calendario
+          </TabsTrigger>
           <TabsTrigger value="diaria" className="flex items-center">
             <Clock className="h-4 w-4 mr-2" />
             Vista Diaria
@@ -483,6 +488,29 @@ const ProgramacionVisitas = () => {
             Vista Mensual
           </TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="calendario" className="mt-6">
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">
+              Calendario Semanal - Semana del {format(startOfWeek(fechaSeleccionada, { weekStartsOn: 1 }), 'dd/MM')} al {format(addDays(startOfWeek(fechaSeleccionada, { weekStartsOn: 1 }), 6), 'dd/MM/yyyy')}
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Arrastra las tarjetas de visitas entre los días para reagendar fácilmente
+            </p>
+          </div>
+          <CalendarioSemanal 
+            visitas={visitas.filter(visita => {
+              const filtroCliente = filtros.cliente === 'all' || visita.clienteId === filtros.cliente;
+              const filtroEquipo = filtros.equipo === 'all' || visita.equipoId === filtros.equipo;
+              const filtroEstado = filtros.estado === 'all' || visita.estado === filtros.estado;
+              return filtroCliente && filtroEquipo && filtroEstado;
+            })}
+            fechaSeleccionada={fechaSeleccionada}
+            clientes={clientes}
+            equipos={equipos}
+            onReagendarVisita={reagendarVisita}
+          />
+        </TabsContent>
         
         <TabsContent value="diaria" className="mt-6">
           <VistaDiaria 
