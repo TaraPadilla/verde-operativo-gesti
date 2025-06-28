@@ -29,6 +29,7 @@ const VistaMensual: React.FC<VistaMensualProps> = ({
   const handleDragStart = (e: React.DragEvent, visitaId: string) => {
     e.dataTransfer.setData('visitaId', visitaId);
     e.dataTransfer.effectAllowed = 'move';
+    console.log('Arrastrando visita:', visitaId);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -39,14 +40,22 @@ const VistaMensual: React.FC<VistaMensualProps> = ({
   const handleDrop = (e: React.DragEvent, nuevaFecha: Date) => {
     e.preventDefault();
     const visitaId = e.dataTransfer.getData('visitaId');
-    const nuevaFechaStr = format(nuevaFecha, 'yyyy-MM-dd');
+    
+    // Formatear la fecha correctamente (usar la fecha local sin conversión de zona horaria)
+    const year = nuevaFecha.getFullYear();
+    const month = String(nuevaFecha.getMonth() + 1).padStart(2, '0');
+    const day = String(nuevaFecha.getDate()).padStart(2, '0');
+    const nuevaFechaStr = `${year}-${month}-${day}`;
+    
+    console.log('Soltando visita:', visitaId, 'en fecha:', nuevaFechaStr);
     onReagendarVisita(visitaId, nuevaFechaStr);
   };
 
   const visitasPorDia = (dia: Date) => {
-    return visitas.filter(visita => 
-      isSameDay(new Date(visita.fechaProgramada), dia)
-    );
+    return visitas.filter(visita => {
+      const fechaVisita = new Date(visita.fechaProgramada + 'T00:00:00');
+      return isSameDay(fechaVisita, dia);
+    });
   };
 
   const getEstadoBadge = (estado: string) => {
@@ -110,42 +119,45 @@ const VistaMensual: React.FC<VistaMensualProps> = ({
             return (
               <div 
                 key={dia.toISOString()} 
-                className={`min-h-[120px] p-2 border-2 border-dashed rounded-lg transition-colors ${
+                className={`min-h-[150px] p-2 border-2 border-dashed rounded-lg transition-colors ${
                   esHoy ? 'bg-blue-50 border-blue-200' : 'border-gray-200 hover:border-green-300 hover:bg-green-50/50'
                 }`}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, dia)}
               >
-                <div className={`text-sm font-medium mb-1 ${
+                <div className={`text-sm font-medium mb-2 ${
                   esHoy ? 'text-blue-600' : 'text-gray-700'
                 }`}>
                   {format(dia, 'd')}
                 </div>
                 
-                <div className="space-y-1">
-                  {visitasHoy.slice(0, 2).map(visita => (
+                <div className="space-y-1 max-h-[120px] overflow-y-auto">
+                  {visitasHoy.map((visita, index) => (
                     <div 
-                      key={visita.id} 
-                      className="text-xs p-1 bg-white rounded border shadow-sm cursor-move hover:shadow-md transition-all hover:scale-105 active:scale-95"
+                      key={`${visita.id}-${index}`}
+                      className="text-xs p-2 bg-white rounded border shadow-sm cursor-move hover:shadow-md transition-all hover:scale-105 active:scale-95 border-l-2 border-l-blue-400"
                       draggable
                       onDragStart={(e) => handleDragStart(e, visita.id)}
                     >
-                      <div className="font-medium truncate">
+                      <div className="font-medium truncate mb-1">
                         {visita.clienteNombre}
                       </div>
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-gray-600 truncate text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600 truncate text-xs flex-1 mr-1">
                           {visita.equipoNombre}
                         </span>
                         {getEstadoBadge(visita.estado)}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {visita.tareasProgramadas.length} tareas
                       </div>
                     </div>
                   ))}
                 </div>
                 
-                {visitasHoy.length > 2 && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    +{visitasHoy.length - 2} más
+                {visitasHoy.length === 0 && (
+                  <div className="text-center py-4 text-gray-400 text-xs">
+                    Arrastrar visitas aquí
                   </div>
                 )}
               </div>

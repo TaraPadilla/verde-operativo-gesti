@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +29,7 @@ const CalendarioSemanal: React.FC<CalendarioSemanalProps> = ({
   const handleDragStart = (e: React.DragEvent, visitaId: string) => {
     e.dataTransfer.setData('visitaId', visitaId);
     e.dataTransfer.effectAllowed = 'move';
+    console.log('Arrastrando visita:', visitaId);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -40,14 +40,22 @@ const CalendarioSemanal: React.FC<CalendarioSemanalProps> = ({
   const handleDrop = (e: React.DragEvent, nuevaFecha: Date) => {
     e.preventDefault();
     const visitaId = e.dataTransfer.getData('visitaId');
-    const nuevaFechaStr = format(nuevaFecha, 'yyyy-MM-dd');
+    
+    // Formatear la fecha correctamente (usar la fecha local sin conversión de zona horaria)
+    const year = nuevaFecha.getFullYear();
+    const month = String(nuevaFecha.getMonth() + 1).padStart(2, '0');
+    const day = String(nuevaFecha.getDate()).padStart(2, '0');
+    const nuevaFechaStr = `${year}-${month}-${day}`;
+    
+    console.log('Soltando visita:', visitaId, 'en fecha:', nuevaFechaStr);
     onReagendarVisita(visitaId, nuevaFechaStr);
   };
 
   const getVisitasPorDia = (fecha: Date) => {
-    return visitas.filter(visita => 
-      isSameDay(new Date(visita.fechaProgramada), fecha)
-    );
+    return visitas.filter(visita => {
+      const fechaVisita = new Date(visita.fechaProgramada + 'T00:00:00');
+      return isSameDay(fechaVisita, fecha);
+    });
   };
 
   const getEstadoColor = (estado: string) => {
@@ -94,7 +102,7 @@ const CalendarioSemanal: React.FC<CalendarioSemanalProps> = ({
           <div
             key={index}
             className={cn(
-              "min-h-[400px] border-2 border-dashed border-gray-200 rounded-lg p-3 transition-colors",
+              "min-h-[450px] border-2 border-dashed border-gray-200 rounded-lg p-3 transition-colors",
               "hover:border-green-300 hover:bg-green-50/50"
             )}
             onDragOver={handleDragOver}
@@ -118,19 +126,19 @@ const CalendarioSemanal: React.FC<CalendarioSemanalProps> = ({
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[350px] overflow-y-auto">
               {visitasDelDia.length === 0 ? (
                 <div className="text-center py-8 text-gray-400 text-sm">
-                  No hay visitas programadas
+                  Arrastrar visitas aquí
                 </div>
               ) : (
-                visitasDelDia.map((visita) => {
+                visitasDelDia.map((visita, visitaIndex) => {
                   const cliente = clientes.find(c => c.id === visita.clienteId);
                   const equipo = equipos.find(e => e.id === visita.equipoId);
                   
                   return (
                     <Card
-                      key={visita.id}
+                      key={`${visita.id}-${visitaIndex}`}
                       className={cn(
                         "cursor-move transition-all duration-200 hover:shadow-lg border-l-4",
                         getEstadoColor(visita.estado),
