@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -131,57 +130,63 @@ const HojaRuta = () => {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Hoja de Ruta</h1>
-        <p className="text-gray-600">
+    <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto">
+      {/* Header - Mobile First */}
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Hoja de Ruta</h1>
+        <p className="text-sm sm:text-base text-gray-600">
           Visitas programadas para hoy - {format(new Date(), 'dd/MM/yyyy', { locale: es })}
         </p>
       </div>
 
-      <div className="grid gap-6">
+      {/* Visits Grid - Mobile First */}
+      <div className="space-y-4 sm:space-y-6">
         {visitasHoy.map((visita) => (
           <Card key={visita.id} className="overflow-hidden">
-            <CardHeader className="bg-green-50 border-b">
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg font-semibold text-gray-900">
+            <CardHeader className="bg-green-50 border-b p-4 sm:p-6">
+              <div className="space-y-3 sm:space-y-0 sm:flex sm:justify-between sm:items-start">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900 truncate">
                     {visita.clienteNombre}
                   </CardTitle>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2 text-sm text-gray-600">
                     <div className="flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      {visita.equipoNombre}
+                      <Users className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{visita.equipoNombre}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {format(new Date(visita.fechaProgramada), 'HH:mm')}
+                      <Clock className="h-4 w-4 flex-shrink-0" />
+                      <span>{format(new Date(visita.fechaProgramada), 'HH:mm')}</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2">
                   {getEstadoBadge(visita.estado)}
                   {visita.estado !== 'completada' && (
                     <Button
                       onClick={() => marcarVisitaCompleta(visita.id)}
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm"
                       size="sm"
                     >
                       <CheckCircle className="h-4 w-4 mr-1" />
-                      Completar
+                      <span className="hidden sm:inline">Completar</span>
+                      <span className="sm:hidden">OK</span>
                     </Button>
                   )}
                 </div>
               </div>
             </CardHeader>
 
-            <CardContent className="p-6">
-              <div className="grid md:grid-cols-2 gap-6">
+            <CardContent className="p-4 sm:p-6">
+              <div className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6">
+                {/* Tasks Section */}
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Tareas Programadas</h4>
+                  <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">
+                    Tareas Programadas
+                  </h4>
                   <div className="space-y-2">
                     {visita.tareasProgramadas.map((tarea, index) => (
-                      <div key={index} className="flex items-center space-x-2">
+                      <div key={index} className="flex items-start space-x-2">
                         <Checkbox
                           id={`tarea-${visita.id}-${index}`}
                           checked={visita.tareasRealizadas.includes(tarea)}
@@ -195,10 +200,11 @@ const HojaRuta = () => {
                               );
                             }
                           }}
+                          className="mt-0.5 flex-shrink-0"
                         />
                         <label
                           htmlFor={`tarea-${visita.id}-${index}`}
-                          className={`text-sm ${
+                          className={`text-sm leading-relaxed ${
                             visita.tareasRealizadas.includes(tarea) 
                               ? 'line-through text-gray-500' 
                               : 'text-gray-700'
@@ -211,20 +217,24 @@ const HojaRuta = () => {
                   </div>
                 </div>
 
+                {/* Observations Section */}
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Observaciones</h4>
+                  <h4 className="font-semibold text-gray-900 mb-3 text-sm sm:text-base">
+                    Observaciones
+                  </h4>
                   <Textarea
                     placeholder="Notas sobre la visita..."
                     value={visita.observaciones}
                     onChange={(e) => actualizarObservaciones(visita.id, e.target.value)}
-                    className="min-h-[100px]"
+                    className="min-h-[80px] sm:min-h-[100px] text-sm"
                   />
                 </div>
               </div>
 
+              {/* Completion Info */}
               {visita.fechaEjecucion && (
                 <div className="mt-4 p-3 bg-green-50 rounded-md">
-                  <p className="text-sm text-green-800">
+                  <p className="text-xs sm:text-sm text-green-800">
                     <strong>Completada:</strong> {format(new Date(visita.fechaEjecucion), 'dd/MM/yyyy HH:mm', { locale: es })}
                   </p>
                 </div>
@@ -233,14 +243,15 @@ const HojaRuta = () => {
           </Card>
         ))}
 
+        {/* Empty State */}
         {visitasHoy.length === 0 && (
           <Card>
-            <CardContent className="p-12 text-center">
-              <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <CardContent className="p-8 sm:p-12 text-center">
+              <CalendarIcon className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
                 No hay visitas programadas
               </h3>
-              <p className="text-gray-600">
+              <p className="text-sm sm:text-base text-gray-600">
                 No tienes visitas asignadas para el día de hoy.
               </p>
             </CardContent>
