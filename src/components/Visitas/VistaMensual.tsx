@@ -3,28 +3,45 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import { format, isSameDay, getDaysInMonth, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Visita } from '@/types';
-import { Clock, MapPin } from 'lucide-react';
 
 interface VistaMensualProps {
   visitas: Visita[];
   fechaSeleccionada: Date;
   setFechaSeleccionada: (fecha: Date) => void;
   clientes: any[];
+  onReagendarVisita: (visitaId: string, nuevaFecha: string) => void;
 }
 
 const VistaMensual: React.FC<VistaMensualProps> = ({ 
   visitas, 
   fechaSeleccionada, 
   setFechaSeleccionada,
-  clientes 
+  clientes,
+  onReagendarVisita 
 }) => {
   const inicioMes = startOfMonth(fechaSeleccionada);
   const finMes = endOfMonth(fechaSeleccionada);
   const diasMes = eachDayOfInterval({ start: inicioMes, end: finMes });
+
+  const handleDragStart = (e: React.DragEvent, visitaId: string) => {
+    e.dataTransfer.setData('visitaId', visitaId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, nuevaFecha: Date) => {
+    e.preventDefault();
+    const visitaId = e.dataTransfer.getData('visitaId');
+    const nuevaFechaStr = format(nuevaFecha, 'yyyy-MM-dd');
+    onReagendarVisita(visitaId, nuevaFechaStr);
+  };
 
   const visitasPorDia = (dia: Date) => {
     return visitas.filter(visita => 
@@ -93,9 +110,11 @@ const VistaMensual: React.FC<VistaMensualProps> = ({
             return (
               <div 
                 key={dia.toISOString()} 
-                className={`min-h-[120px] p-2 border rounded-lg ${
-                  esHoy ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
+                className={`min-h-[120px] p-2 border-2 border-dashed rounded-lg transition-colors ${
+                  esHoy ? 'bg-blue-50 border-blue-200' : 'border-gray-200 hover:border-green-300 hover:bg-green-50/50'
                 }`}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, dia)}
               >
                 <div className={`text-sm font-medium mb-1 ${
                   esHoy ? 'text-blue-600' : 'text-gray-700'
@@ -104,16 +123,18 @@ const VistaMensual: React.FC<VistaMensualProps> = ({
                 </div>
                 
                 <div className="space-y-1">
-                  {visitasHoy.map(visita => (
+                  {visitasHoy.slice(0, 2).map(visita => (
                     <div 
                       key={visita.id} 
-                      className="text-xs p-1 bg-white rounded border shadow-sm"
+                      className="text-xs p-1 bg-white rounded border shadow-sm cursor-move hover:shadow-md transition-all hover:scale-105 active:scale-95"
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, visita.id)}
                     >
                       <div className="font-medium truncate">
                         {visita.clienteNombre}
                       </div>
                       <div className="flex items-center justify-between mt-1">
-                        <span className="text-gray-600 truncate">
+                        <span className="text-gray-600 truncate text-xs">
                           {visita.equipoNombre}
                         </span>
                         {getEstadoBadge(visita.estado)}
