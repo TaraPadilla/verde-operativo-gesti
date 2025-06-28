@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -532,6 +533,7 @@ const ProgramacionVisitas = () => {
             fechaSeleccionada={fechaSeleccionada}
             setFechaSeleccionada={setFechaSeleccionada}
             clientes={clientes}
+            onReagendarVisita={reagendarVisita}
           />
         </TabsContent>
       </Tabs>
