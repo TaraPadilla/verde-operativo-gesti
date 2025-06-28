@@ -17,7 +17,8 @@ import {
   UserPlus,
   MapPin,
   Clock,
-  Menu
+  Menu,
+  X
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -27,11 +28,9 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
   const { usuario } = useAuth();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   const getMenuItems = () => {
-    const baseItems = [];
-
     if (usuario?.rol === 'administrador') {
       return [
         { 
@@ -82,113 +81,113 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
       ];
     }
 
-    return baseItems;
+    return [];
   };
 
   const menuItems = getMenuItems();
 
+  const handleMenuItemClick = (itemId: string) => {
+    setActiveTab(itemId);
+    setIsOpen(false); // Cerrar sidebar en móvil después de seleccionar
+  };
+
   return (
     <>
-      {/* Mobile Toggle Button */}
-      <div className="md:hidden fixed top-4 left-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="bg-white shadow-md"
-        >
-          <Menu className="h-4 w-4" />
-        </Button>
-      </div>
+      {/* Hamburger Menu Button - Fixed position */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed top-20 left-4 z-50 bg-white shadow-md hover:bg-gray-50"
+      >
+        {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+      </Button>
+
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
 
       {/* Sidebar */}
       <div className={`
         bg-gradient-to-b from-green-50 to-green-100 
-        fixed md:relative inset-y-0 left-0 z-40
+        fixed inset-y-0 left-0 z-40
         w-64 min-h-screen p-4 shadow-lg
         transform transition-transform duration-300 ease-in-out
-        ${isCollapsed ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}
-        md:w-64
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:relative md:translate-x-0
+        ${isOpen ? 'md:w-64' : 'md:w-0 md:overflow-hidden'}
       `}>
-        {/* Header */}
-        <div className="mb-6 pt-8 md:pt-0">
-          <div className="text-xs text-green-600 font-medium mb-2">
-            {usuario?.rol?.replace('_', ' ').toUpperCase()}
+        <div className={`${!isOpen ? 'md:hidden' : ''}`}>
+          {/* Header */}
+          <div className="mb-6 pt-8 md:pt-0">
+            <div className="text-xs text-green-600 font-medium mb-2">
+              {usuario?.rol?.replace('_', ' ').toUpperCase()}
+            </div>
+            <div className="text-gray-600 text-sm truncate">
+              {usuario?.nombre}
+            </div>
           </div>
-          <div className="text-gray-600 text-sm truncate">
-            {usuario?.nombre}
-          </div>
+
+          {/* Navigation */}
+          <nav className="space-y-2">
+            {usuario?.rol === 'encargado' ? (
+              // Simple menu for encargado
+              menuItems.map((item) => (
+                <Button
+                  key={item.id}
+                  variant={activeTab === item.id ? "default" : "ghost"}
+                  className={`w-full justify-start text-sm ${
+                    activeTab === item.id 
+                      ? 'bg-green-600 text-white hover:bg-green-700' 
+                      : 'text-green-700 hover:bg-green-200'
+                  }`}
+                  onClick={() => handleMenuItemClick(item.id)}
+                >
+                  <item.icon className="mr-3 h-4 w-4" />
+                  {item.label}
+                </Button>
+              ))
+            ) : (
+              // Accordion menu for admin and operator
+              <Accordion type="multiple" className="w-full">
+                {menuItems.map((section) => (
+                  <AccordionItem key={section.id} value={section.id} className="border-none">
+                    <AccordionTrigger className="text-green-700 hover:text-green-800 hover:bg-green-200 px-3 py-2 rounded-md text-sm font-medium">
+                      <div className="flex items-center">
+                        <section.icon className="mr-3 h-4 w-4" />
+                        {section.label}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-2">
+                      <div className="space-y-1 ml-4">
+                        {section.children?.map((item) => (
+                          <Button
+                            key={item.id}
+                            variant={activeTab === item.id ? "default" : "ghost"}
+                            className={`w-full justify-start text-sm ${
+                              activeTab === item.id 
+                                ? 'bg-green-600 text-white hover:bg-green-700' 
+                                : 'text-green-700 hover:bg-green-200'
+                            }`}
+                            onClick={() => handleMenuItemClick(item.id)}
+                          >
+                            <item.icon className="mr-3 h-4 w-4" />
+                            {item.label}
+                          </Button>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            )}
+          </nav>
         </div>
-
-        {/* Navigation */}
-        <nav className="space-y-2">
-          {usuario?.rol === 'encargado' ? (
-            // Simple menu for encargado
-            menuItems.map((item) => (
-              <Button
-                key={item.id}
-                variant={activeTab === item.id ? "default" : "ghost"}
-                className={`w-full justify-start text-sm ${
-                  activeTab === item.id 
-                    ? 'bg-green-600 text-white hover:bg-green-700' 
-                    : 'text-green-700 hover:bg-green-200'
-                }`}
-                onClick={() => {
-                  setActiveTab(item.id);
-                  setIsCollapsed(true); // Close mobile menu after selection
-                }}
-              >
-                <item.icon className="mr-3 h-4 w-4" />
-                {item.label}
-              </Button>
-            ))
-          ) : (
-            // Accordion menu for admin and operator
-            <Accordion type="multiple" className="w-full">
-              {menuItems.map((section) => (
-                <AccordionItem key={section.id} value={section.id} className="border-none">
-                  <AccordionTrigger className="text-green-700 hover:text-green-800 hover:bg-green-200 px-3 py-2 rounded-md text-sm font-medium">
-                    <div className="flex items-center">
-                      <section.icon className="mr-3 h-4 w-4" />
-                      {section.label}
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pb-2">
-                    <div className="space-y-1 ml-4">
-                      {section.children?.map((item) => (
-                        <Button
-                          key={item.id}
-                          variant={activeTab === item.id ? "default" : "ghost"}
-                          className={`w-full justify-start text-sm ${
-                            activeTab === item.id 
-                              ? 'bg-green-600 text-white hover:bg-green-700' 
-                              : 'text-green-700 hover:bg-green-200'
-                          }`}
-                          onClick={() => {
-                            setActiveTab(item.id);
-                            setIsCollapsed(true); // Close mobile menu after selection
-                          }}
-                        >
-                          <item.icon className="mr-3 h-4 w-4" />
-                          {item.label}
-                        </Button>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          )}
-        </nav>
       </div>
-
-      {/* Mobile Overlay */}
-      {!isCollapsed && (
-        <div 
-          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
-          onClick={() => setIsCollapsed(true)}
-        />
-      )}
     </>
   );
 };
